@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Processing With Web Assembly</title>
+  <style>
+    body {
+      text-align: center;
+      margin: 20px;
+    }
+
+    canvas {
+      border: 1px solid #ddd;
+    }
+  </style>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link href="output.css" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- component -->
+  <div x-data="setup()" x-init="$refs.loading.classList.add('hidden');" @resize.window="watchScreen()">
+    <div class="flex h-screen antialiased text-gray-900 bg-gray-100 dark:bg-dark dark:text-light">
+      <!-- Loading screen -->
+      <div x-ref="loading"
+        class="fixed inset-0 z-50 flex items-center justify-center text-2xl font-semibold text-white bg-indigo-800">
+        Loading.....
+      </div>
+
+      <!-- Sidebar -->
+      <div class="flex flex-shrink-0 transition-all">
+        <div x-show="isSidebarOpen" @click="isSidebarOpen = false"
+          class="fixed inset-0 z-10 bg-black bg-opacity-50 lg:hidden"></div>
+        <div x-show="isSidebarOpen" class="fixed inset-y-0 z-10 w-16 bg-white"></div>
+
+        <!-- Mobile bottom bar -->
+        <nav aria-label="Options"
+          class="fixed inset-x-0 bottom-0 flex flex-row-reverse items-center justify-between px-4 py-2 bg-white border-t border-indigo-100 sm:hidden shadow-t rounded-t-3xl">
+          <!-- Menu button -->
+          <button
+            @click="(isSidebarOpen && currentSidebarTab == 'filtersTab') ? isSidebarOpen = false : isSidebarOpen = true; currentSidebarTab = 'filtersTab'"
+            class="p-2 transition-colors rounded-lg shadow-md hover:bg-indigo-800 hover:text-white focus:outline-none focus:ring focus:ring-indigo-600 focus:ring-offset-white focus:ring-offset-2"
+            :class="(isSidebarOpen && currentSidebarTab == 'filtersTab') ? 'text-white bg-indigo-600' : 'text-gray-500 bg-white'">
+            <span class="sr-only">Toggle sidebar</span>
+            <svg aria-hidden="true" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+          </button>
+
+          <!-- Logo -->
+          <a href="#">
+            <img class="w-10 h-auto" src="logo.png" alt="DM" />
+          </a>
+        </nav>
+
+        <!-- Left mini bar -->
+        <nav aria-label="Options"
+          class="z-20 flex-col items-center flex-shrink-0 hidden w-16 py-4 bg-white border-r-2 border-indigo-100 shadow-md sm:flex rounded-tr-3xl rounded-br-3xl">
+          <!-- Logo -->
+          <div class="flex-shrink-0 py-4">
+            <a href="javascript:void(0)">
+              <img class="w-10 h-auto" src="logo.png" alt="DM" />
+            </a>
+          </div>
+          <div class="flex flex-col items-center flex-1 p-2 space-y-4">
+            <!-- Menu button -->
+            <button
+              @click="(isSidebarOpen && currentSidebarTab == 'filtersTab') ? isSidebarOpen = false : isSidebarOpen = true; currentSidebarTab = 'filtersTab'"
+              class="p-2 transition-colors rounded-lg shadow-md hover:bg-indigo-800 hover:text-white focus:outline-none focus:ring focus:ring-indigo-600 focus:ring-offset-white focus:ring-offset-2"
+              :class="(isSidebarOpen && currentSidebarTab == 'filtersTab') ? 'text-white bg-indigo-600' : 'text-gray-500 bg-white'">
+              <span class="sr-only">Toggle Filters</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+              </svg>
+            </button>
+            <!-- Messages button -->
+            <button
+              @click="(isSidebarOpen && currentSidebarTab == 'correctionTab') ? isSidebarOpen = false : isSidebarOpen = true; currentSidebarTab = 'correctionTab'"
+              class="p-2 transition-colors rounded-lg shadow-md hover:bg-indigo-800 hover:text-white focus:outline-none focus:ring focus:ring-indigo-600 focus:ring-offset-white focus:ring-offset-2"
+              :class="(isSidebarOpen && currentSidebarTab == 'correctionTab') ? 'text-white bg-indigo-600' : 'text-gray-500 bg-white'">
+              <span class="sr-only">Toggle corrections</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+              </svg>
+
+            </button>
+            <!-- Notifications button -->
+            <button
+              @click="(isSidebarOpen && currentSidebarTab == 'notificationsTab') ? isSidebarOpen = false : isSidebarOpen = true; currentSidebarTab = 'notificationsTab'"
+              class="p-2 transition-colors rounded-lg shadow-md hover:bg-indigo-800 hover:text-white focus:outline-none focus:ring focus:ring-indigo-600 focus:ring-offset-white focus:ring-offset-2"
+              :class="(isSidebarOpen && currentSidebarTab == 'notificationsTab') ? 'text-white bg-indigo-600' : 'text-gray-500 bg-white'">
+              <span class="sr-only">Toggle Transformations</span>
+              <svg aria-hidden="true" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
+          </div>
+
+        </nav>
+
+        <div x-transition:enter="transform transition-transform duration-300"
+          x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+          x-transition:leave="transform transition-transform duration-300" x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="-translate-x-full" x-show="isSidebarOpen"
+          class="fixed inset-y-0 left-0 z-10 flex-shrink-0 w-64 bg-white border-r-2 border-indigo-100 shadow-lg sm:left-16 rounded-tr-3xl rounded-br-3xl sm:w-72 lg:static lg:w-64">
+          <nav x-show="currentSidebarTab == 'filtersTab'" aria-label="Main" class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-center flex-shrink-0 py-3">
+              <a href="javascript:void(0)">
+                <img class="w-20 h-auto" src="logo.png" alt="DM" />
+              </a>
+            </div>
+            <h2 class="text-xl">Filters</h2>
+
+            <!-- Links -->
+            <div class="flex-1 px-4 mt-1 space-y-2 overflow-hidden hover:overflow-auto">
+              <a href="javascript:void(0)" class="flex items-center p-2 w-full space-x-2 text-white justify-center w-1/2 bg-indigo-700 rounded-lg"
+                id="btnVintage">
+                <span>Vintage</span>
+              </a>
+            </div>
+          </nav>
+
+          <section x-show="currentSidebarTab == 'correctionTab'" class="px-4 py-6">
+            <h2 class="text-xl">Image corrections</h2>
+          </section>
+
+          <section x-show="currentSidebarTab == 'notificationsTab'" class="px-4 py-6">
+            <h2 class="text-xl">Notifications</h2>
+          </section>
+        </div>
+      </div>
+      <div class="flex flex-col flex-1">
+        <header class="relative flex items-center justify-between flex-shrink-0">
+          <form action="#" class="flex-1">
+          </form>
+        </header>
+
+        <div class="flex flex-1" x-data="{toggle: false,file:''}">
+          <!-- Main -->
+          <main class="flex items-center justify-center flex-1 px-4 py-8">
+            <div class="container w-full h-full mx-3 p-4">
+              <form class="flex flex-col sm:flex-row justify-between">
+                <div class="mb-4 sm:mb-0">
+                  <label class="block relative">
+                    <span class="sr-only">Choose Image</span>
+                    <input type="file" id="imageInput" accept="image/*" class="block w-full sm:w-50 text-sm text-gray-500
+                      file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-600 file:text-white
+                      hover:file:bg-indigo-700
+                      file:disabled:opacity-50 file:disabled:pointer-events-none
+                      dark:file:bg-indigo-500
+                      dark:hover:file:bg-indigo-400
+                    " x-model="file">
+                    <button type="button" x-show="file" id="btnClear" @click="file=''"
+                      class="py-2 px-2.5 mr-[-35px] absolute top-0 right-0 inline-flex items-center gap-x-2 text-sm font-semibold rounded-md border border-transparent bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                      X
+                    </button>
+                  </label>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-end">
+                  <div class="flex flex-col sm:flex-row justify-start">
+                    <div class="relative inline-block mt-2">
+                      <input type="checkbox" id="hs-large-switch-with-icons" x-model="toggle"
+                        class="peer relative w-[4.25rem] h-9 p-px bg-gray-100 border-transparent text-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:ring-indigo-600 disabled:opacity-50 disabled:pointer-events-none checked:bg-none checked:text-indigo-600 border-indigo-600 focus:checked:border-indigo-600 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-indigo-500 dark:checked:border-indigo-500 dark:focus:ring-offset-gray-600
+                    before:inline-block before:w-8 before:h-8 before:bg-white checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full before:rounded-full before:shadow before:transform before:ring-0 before:transition before:ease-in-out before:duration-200 dark:before:bg-gray-400 dark:checked:before:bg-blue-200">
+                      <label for="hs-large-switch-with-icons" class="sr-only">switch</label>
+                    </div>
+                    <label for="hs-basic-disabled-checked"
+                      class="text-sm text-gray-500 ms-3 dark:text-gray-400 p-4">Show Original</label>
+                  </div>
+                  <button type="button" id="applyChanges" @click="file = ''"
+                    class="py-3 px-4 inline-flex items-center text-center gap-x-2 text-sm font-semibold rounded-lg border border-indigo-500 text-indigo-500 hover:bg-indigo-500 hover:text-white disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                    Download
+                  </button>
+                </div>
+              </form>
+
+              <div class="grid  md:grid-cols-1 sm:grid-cols-1 gap-2 mt-5"
+                :class="{'lg:grid-cols-2':toggle,'lg:grid-cols-1':!toggle}">
+                <div :class="{ 'w-full': toggle, 'm-1': toggle }" x-show="toggle && file">
+                  <canvas id="canvasPreview" class="w-full"></canvas>
+                </div>
+                <canvas id="canvasChanged" class="w-full m-1 max-w-[655px]" x-show="file"></canvas>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.7.3/dist/alpine.min.js" defer></script>
+  <script>
+    const setup = () => {
+      return {
+        isSidebarOpen: true,
+        currentSidebarTab: "filtersTab",
+        isSettingsPanelOpen: false,
+        isSubHeaderOpen: false,
+        watchScreen() {
+          if (window.innerWidth <= 1024) {
+            this.isSidebarOpen = false
+          }
+        },
+      }
+    }
+  </script>
+
+</body>
+
+</html>
