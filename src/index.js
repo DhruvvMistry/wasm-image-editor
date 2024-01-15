@@ -4,6 +4,28 @@ import "/node_modules/preline/dist/preline.js";
 document.addEventListener('DOMContentLoaded', () => {
   import("@silvia-odwyer/photon").then(photon => {
 
+    const filterArray = ["no_filter", "oceanic", "islands", "marine", "seagreen", "flagblue", "liquid", "diamante", "radio", "twenties", "rosetint", "mauve", "bluechrome", "vintage", "perfume", "serenity", "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"];
+
+    var filtersUl = document.getElementById('filters');
+
+    filterArray.forEach(filter => {
+      const filterHtml = `<label for="filters-radio-${filter}"
+      class="inline-flex items-center gap-x-2.5 py-3 px-4 text-sm font-medium bg-white border text-indigo-800 -mt-px first:rounded-t-lg first:mt-0 last:rounded-b-lg sm:-ms-px sm:mt-0 sm:first:rounded-se-none sm:first:rounded-es-lg sm:last:rounded-es-none sm:last:rounded-se-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+      <div class="relative flex items-start w-full">
+        <div class="flex items-center h-5">
+          <input id="filters-radio-${filter}" name="filters-radio" value="${filter}" x-disabled="!file"
+            type="radio"
+            class="border-indigo-200 rounded-full disabled:opacity-50 dark:bg-gray-800 dark:border-indigo-700 dark:checked:bg-indigo-500 dark:checked:border-indigo-500 dark:focus:ring-indigo-gray-800">
+        </div>
+        <label for="filters-radio-${filter}"
+          class="ms-3 block w-full text-sm text-indigo-600 dark:text-indigo-500">
+          ${filter.replace("_", " ")}
+        </label>
+      </div>
+    </label>`;
+      filtersUl.innerHTML += filterHtml;
+    })
+
     const canvasPreview = document.getElementById('canvasPreview');
     const canvasChanged = document.getElementById('canvasChanged');
     const imageInput = document.getElementById('imageInput');
@@ -90,13 +112,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleCanvasChange = (filter) => {
       if (hasImage()) {
-        const ctxChanged = canvasChanged.getContext('2d');
-        copyfrompreviewtocanvas();
-        let img = photon.open_image(canvasChanged, ctxChanged);
-        photon.filter(img, filter);
-        photon.putImageData(canvasChanged, ctxChanged, img);
-      }
-    };
+        try {
+          const ctxChanged = canvasChanged.getContext('2d');
+          copyfrompreviewtocanvas();
+          let img = photon.open_image(canvasChanged, ctxChanged);
+          switch (filter) {
+            case "oceanic":
+            case "islands":
+            case "marine":
+            case "seagreen":
+            case "flagblue":
+            case "liquid":
+            case "diamante":
+            case "radio":
+            case "twenties":
+            case "rosetint":
+            case "mauve":
+            case "bluechrome":
+            case "vintage":
+            case "perfume":
+            case "serenity":
+              photon.filter(img, filter);
+              break;
+            case "cali":
+              photon.cali(img);
+            case "dramatic":
+              photon.dramatic(img);
+            case "duotone_horizon":
+              photon.duotone_horizon(img);
+            case "duotone_lilac":
+              photon.duotone_lilac(img);
+            case "duotone_ochre":
+              photon.duotone_ochre(img);
+            case "duotone_violette":
+              photon.duotone_violette(img);
+            case "firenze":
+              photon.firenze(img);
+            case "golden":
+              photon.golden(img);
+            case "lix":
+              photon.lix(img);
+            case "lofi":
+              photon.lofi(img);
+            case "neue":
+              photon.neue(img);
+            case "obsidian":
+              photon.obsidian(img);
+            case "pastel_pink":
+              photon.pastel_pink(img);
+            case "ryo":
+              photon.ryo(img);
+            case "no_filter":
+            default:
+              break;
+          }
+          photon.putImageData(canvasChanged, ctxChanged, img);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+    }
 
     function copyfrompreviewtocanvas() {
       const ctxChanged = canvasChanged.getContext('2d');
