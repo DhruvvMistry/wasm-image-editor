@@ -4,7 +4,7 @@ import "/node_modules/preline/dist/preline.js";
 document.addEventListener('DOMContentLoaded', () => {
   import("@silvia-odwyer/photon").then(photon => {
 
-    const filterArray = ["no_filter", "oceanic", "islands", "marine", "seagreen", "flagblue", "liquid", "diamante", "radio", "twenties", "rosetint", "mauve", "bluechrome", "vintage", "perfume", "serenity", "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"];
+    const filterArray = ["no_filter", "oceanic", "islands", "marine", "seagreen", "flagblue", "liquid", "diamante", "radio", "twenties", "rosetint", "mauve", "bluechrome", "vintage", "perfume", "serenity"];//, "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"
 
     var filtersUl = document.getElementById('filters');
 
@@ -29,11 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvasPreview = document.getElementById('canvasPreview');
     const canvasChanged = document.getElementById('canvasChanged');
     const imageInput = document.getElementById('imageInput');
+    const inputImageQuality = document.getElementById("inputImageQuality");
     const btnClear = document.getElementById('btnClear');
     const filters_radio = document.getElementsByName("filters-radio");
-    const image = new Image();
-    var imageWidth;
-    var imageHeight;
 
     function hasImage() {
       var ctxPreview = canvasPreview.getContext('2d');
@@ -77,38 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let imagePreview = new Image();
         imagePreview.src = URL.createObjectURL(img);
         imagePreview.onload = () => {
-          imageWidth = imagePreview.width;
-          imageHeight = imagePreview.height;
-          // Calculate scaled dimensions based on max width and height
-          const maxWidth = 655;
-          const maxHeight = 470;
-          let scaledWidth, scaledHeight;
+          const imageWidth = imagePreview.width;
+          const imageHeight = imagePreview.height;
 
-          if (imageWidth > imageHeight) {
-            // Image is wider than it is tall
-            scaledWidth = maxWidth;
-            scaledHeight = scaledWidth * (imageHeight / imageWidth);
-          } else {
-            // Image is taller than it is wide
-            scaledHeight = maxHeight;
-            scaledWidth = scaledHeight * (imageWidth / imageHeight);
-          }
-
-          // Set canvas and image dimensions
-          canvasPreview.width = scaledWidth;
-          canvasPreview.height = scaledHeight;
-          image.src = imagePreview.src;
-          image.width = scaledWidth;
-          image.height = scaledHeight;
-
-          // Draw image onto canvas
           const ctxPreview = canvasPreview.getContext('2d');
-          ctxPreview.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, scaledWidth, scaledHeight);
+          canvasPreview.width = imageWidth;
+          canvasPreview.height = imageHeight;
+          ctxPreview.drawImage(imagePreview, 0, 0, imageWidth, imageHeight);
 
           copyfrompreviewtocanvas();
         };
       }
     };
+
 
     const handleCanvasChange = (filter) => {
       if (hasImage()) {
@@ -134,34 +113,34 @@ document.addEventListener('DOMContentLoaded', () => {
             case "serenity":
               photon.filter(img, filter);
               break;
-            case "cali":
-              photon.cali(img);
-            case "dramatic":
-              photon.dramatic(img);
-            case "duotone_horizon":
-              photon.duotone_horizon(img);
-            case "duotone_lilac":
-              photon.duotone_lilac(img);
-            case "duotone_ochre":
-              photon.duotone_ochre(img);
-            case "duotone_violette":
-              photon.duotone_violette(img);
-            case "firenze":
-              photon.firenze(img);
-            case "golden":
-              photon.golden(img);
-            case "lix":
-              photon.lix(img);
-            case "lofi":
-              photon.lofi(img);
-            case "neue":
-              photon.neue(img);
-            case "obsidian":
-              photon.obsidian(img);
-            case "pastel_pink":
-              photon.pastel_pink(img);
-            case "ryo":
-              photon.ryo(img);
+            // case "cali":
+            //   photon.cali(img);
+            // case "dramatic":
+            //   photon.dramatic(img);
+            // case "duotone_horizon":
+            //   photon.duotone_horizon(img);
+            // case "duotone_lilac":
+            //   photon.duotone_lilac(img);
+            // case "duotone_ochre":
+            //   photon.duotone_ochre(img);
+            // case "duotone_violette":
+            //   photon.duotone_violette(img);
+            // case "firenze":
+            //   photon.firenze(img);
+            // case "golden":
+            //   photon.golden(img);
+            // case "lix":
+            //   photon.lix(img);
+            // case "lofi":
+            //   photon.lofi(img);
+            // case "neue":
+            //   photon.neue(img);
+            // case "obsidian":
+            //   photon.obsidian(img);
+            // case "pastel_pink":
+            //   photon.pastel_pink(img);
+            // case "ryo":
+            //   photon.ryo(img);
             case "no_filter":
             default:
               break;
@@ -177,7 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const ctxChanged = canvasChanged.getContext('2d');
       canvasChanged.width = canvasPreview.width;
       canvasChanged.height = canvasPreview.height;
-      ctxChanged.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, canvasPreview.width, canvasPreview.height);
+      ctxChanged.drawImage(canvasPreview, 0, 0, canvasPreview.width, canvasPreview.height, 0, 0, canvasChanged.width, canvasChanged.height);
+    }
+
+    inputImageQuality.oninput = () => {
+      const quality = inputImageQuality.value;
+      document.getElementById("imageQuality").innerHTML = quality;
     }
 
     function clearFileUpload() {
