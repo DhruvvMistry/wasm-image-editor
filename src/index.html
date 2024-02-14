@@ -193,19 +193,19 @@
                         <input type="range" min="10" max="100" value="90" class="slider" id="inputImageQuality">
                       </div>
                       <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-indigo-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-indigo-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:bg-gray-700"
-                        href="javascript:(0)" onclick="downloadImage('png')">
+                        href="javascript:(0)" id="downloadPNG" >
                         PNG
                       </a>
                       <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-indigo-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-indigo-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:bg-gray-700"
-                        href="javascript:(0)" onclick="downloadImage('webp')">
+                        href="javascript:(0)" id="downloadWEBP">
                         WEBP
                       </a>
                       <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-indigo-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-indigo-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:bg-gray-700"
-                        href="javascript:(0)" onclick="downloadImage('jpeg')">
+                        href="javascript:(0)" id="downloadJPEG">
                         JPEG
                       </a>
                       <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-indigo-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 dark:focus:bg-gray-700"
-                        href="javascript:(0)" onclick="downloadImage('jpg')">
+                        href="javascript:(0)" id="downloadJPG">
                         JPG
                       </a>
                     </div>
@@ -219,6 +219,7 @@
                 <canvas id="canvasPreview" class="m-1 max-h-[450px]" :class="{'w-full':toggle}"
                   x-show="toggle && file"></canvas>
                 <canvas id="canvasChanged" class="m-1 max-h-[450px]" :class="{'w-full':toggle}" x-show="file"></canvas>
+                <canvas id="canvasDownload" style="display:none"></canvas>
 
                 <div class="w-full h-full text-center" x-show="!file">
                   <h2>Please Select an Image</h2>
@@ -247,13 +248,7 @@
       }
     }
 
-    function downloadImage(format) {
-      const dataURL = document.getElementById('canvasChanged').toDataURL(`image/${format}`);
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = `canvas_image.${format}`;
-      link.click();
-    }
+    
   </script>
 
 </body>

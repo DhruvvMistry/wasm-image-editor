@@ -1,14 +1,31 @@
-import './style.css';
+import "./style.css";
 import "/node_modules/preline/dist/preline.js";
+import Compressor from "compressorjs";
 
-document.addEventListener('DOMContentLoaded', () => {
-  import("@silvia-odwyer/photon").then(photon => {
+document.addEventListener("DOMContentLoaded", () => {
+  import("@silvia-odwyer/photon").then((photon) => {
+    const filterArray = [
+      "no_filter",
+      "oceanic",
+      "islands",
+      "marine",
+      "seagreen",
+      "flagblue",
+      "liquid",
+      "diamante",
+      "radio",
+      "twenties",
+      "rosetint",
+      "mauve",
+      "bluechrome",
+      "vintage",
+      "perfume",
+      "serenity",
+    ]; //, "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"
 
-    const filterArray = ["no_filter", "oceanic", "islands", "marine", "seagreen", "flagblue", "liquid", "diamante", "radio", "twenties", "rosetint", "mauve", "bluechrome", "vintage", "perfume", "serenity"];//, "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"
+    var filtersUl = document.getElementById("filters");
 
-    var filtersUl = document.getElementById('filters');
-
-    filterArray.forEach(filter => {
+    filterArray.forEach((filter) => {
       const filterHtml = `<label for="filters-radio-${filter}"
       class="inline-flex items-center gap-x-2.5 py-3 px-4 text-sm font-medium bg-white border text-indigo-800 -mt-px first:rounded-t-lg first:mt-0 last:rounded-b-lg sm:-ms-px sm:mt-0 sm:first:rounded-se-none sm:first:rounded-es-lg sm:last:rounded-es-none sm:last:rounded-se-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div class="relative flex items-start w-full">
@@ -24,18 +41,24 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </label>`;
       filtersUl.innerHTML += filterHtml;
-    })
+    });
 
-    const canvasPreview = document.getElementById('canvasPreview');
-    const canvasChanged = document.getElementById('canvasChanged');
-    const imageInput = document.getElementById('imageInput');
+    const canvasPreview = document.getElementById("canvasPreview");
+    const canvasChanged = document.getElementById("canvasChanged");
+    const canvasDownload = document.getElementById("canvasDownload");
+    const imageInput = document.getElementById("imageInput");
     const inputImageQuality = document.getElementById("inputImageQuality");
-    const btnClear = document.getElementById('btnClear');
+    const btnClear = document.getElementById("btnClear");
     const filters_radio = document.getElementsByName("filters-radio");
 
     function hasImage() {
-      var ctxPreview = canvasPreview.getContext('2d');
-      var imageData = ctxPreview.getImageData(0, 0, canvasPreview.width, canvasPreview.height).data;
+      var ctxPreview = canvasPreview.getContext("2d");
+      var imageData = ctxPreview.getImageData(
+        0,
+        0,
+        canvasPreview.width,
+        canvasPreview.height,
+      ).data;
       for (var i = 0; i < imageData.length; i += 4) {
         if (imageData[i + 3] !== 0) {
           return true;
@@ -44,20 +67,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
 
-    imageInput.addEventListener('change', function () {
+    imageInput.addEventListener("change", function () {
       if (imageInput.files.length > 0) {
         filters_radio.forEach(function (radio) {
           radio.disabled = false;
-        })
+        });
       } else {
         filters_radio.forEach(function (radio) {
           radio.disabled = true;
-        })
+        });
       }
     });
 
     filters_radio.forEach(function (radio) {
-      radio.addEventListener('change', function () {
+      radio.addEventListener("change", function () {
         var selectedValue;
         filters_radio.forEach(function (radio) {
           if (radio.checked) {
@@ -78,22 +101,21 @@ document.addEventListener('DOMContentLoaded', () => {
           const imageWidth = imagePreview.width;
           const imageHeight = imagePreview.height;
 
-          const ctxPreview = canvasPreview.getContext('2d');
+          const ctxPreview = canvasPreview.getContext("2d");
           canvasPreview.width = imageWidth;
           canvasPreview.height = imageHeight;
           ctxPreview.drawImage(imagePreview, 0, 0, imageWidth, imageHeight);
 
-          copyfrompreviewtocanvas();
+          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
         };
       }
     };
 
-
     const handleCanvasChange = (filter) => {
       if (hasImage()) {
         try {
-          const ctxChanged = canvasChanged.getContext('2d');
-          copyfrompreviewtocanvas();
+          const ctxChanged = canvasChanged.getContext("2d");
+          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
           let img = photon.open_image(canvasChanged, ctxChanged);
           switch (filter) {
             case "oceanic":
@@ -149,32 +171,92 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
           console.log(error);
         }
-      };
+      }
+    };
+
+    function copyfrompreviewtocanvas(fromCanvas, toCanvas) {
+      const ctxtoCanvas = toCanvas.getContext("2d");
+      toCanvas.width = fromCanvas.width;
+      toCanvas.height = fromCanvas.height;
+      ctxtoCanvas.drawImage(
+        fromCanvas,
+        0,
+        0,
+        fromCanvas.width,
+        fromCanvas.height,
+        0,
+        0,
+        toCanvas.width,
+        toCanvas.height,
+      );
     }
 
-    function copyfrompreviewtocanvas() {
-      const ctxChanged = canvasChanged.getContext('2d');
-      canvasChanged.width = canvasPreview.width;
-      canvasChanged.height = canvasPreview.height;
-      ctxChanged.drawImage(canvasPreview, 0, 0, canvasPreview.width, canvasPreview.height, 0, 0, canvasChanged.width, canvasChanged.height);
+    function downloadImage(format) {
+      copyfrompreviewtocanvas(canvasChanged, canvasDownload);
+      var quality = +inputImageQuality.value / 100;
+      canvasDownload.toBlob((blob) => {
+        new Compressor(blob, {
+          quality: quality,
+          mimeType: "image/jpeg",
+          convertTypes: ["image/jpeg", "image/webp", "image/png", "image/jpg"],
+          success(result) {
+            convertToDesiredTypeAndDownloadImage(result, format);
+          },
+        });
+      });
+    }
+
+    function convertToDesiredTypeAndDownloadImage(image, format) {
+      var ext = format;
+      format = format === "jpg" ? "jpeg" : format;
+      new Compressor(image, {
+        mimeType: "image/" + format,
+        convertTypes: ["image/jpeg"],
+        success(result) {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(result);
+          link.download = `image.${ext}`;
+          link.click();
+        },
+      });
     }
 
     inputImageQuality.oninput = () => {
       const quality = inputImageQuality.value;
       document.getElementById("imageQuality").innerHTML = quality;
-    }
+    };
 
     function clearFileUpload() {
       document.getElementById("imageInput").value = "";
-      const ctxPreview = canvasPreview.getContext('2d');
-      const ctxChanged = canvasChanged.getContext('2d');
-      ctxPreview.clearRect(0, 0, ctxPreview.canvas.width, ctxPreview.canvas.height);
-      ctxChanged.clearRect(0, 0, ctxChanged.canvas.width, ctxChanged.canvas.height);
+      const ctxPreview = canvasPreview.getContext("2d");
+      const ctxChanged = canvasChanged.getContext("2d");
+      ctxPreview.clearRect(
+        0,
+        0,
+        ctxPreview.canvas.width,
+        ctxPreview.canvas.height,
+      );
+      ctxChanged.clearRect(
+        0,
+        0,
+        ctxChanged.canvas.width,
+        ctxChanged.canvas.height,
+      );
     }
 
-    imageInput.addEventListener('change', handleImageChange);
-    btnClear.addEventListener('click', clearFileUpload);
+    imageInput.addEventListener("change", handleImageChange);
+    btnClear.addEventListener("click", clearFileUpload);
+    document.getElementById("downloadPNG").addEventListener("click", () => {
+      downloadImage("png");
+    });
+    document.getElementById("downloadJPG").addEventListener("click", () => {
+      downloadImage("jpg");
+    });
+    document.getElementById("downloadJPEG").addEventListener("click", () => {
+      downloadImage("jpeg");
+    });
+    document.getElementById("downloadWEBP").addEventListener("click", () => {
+      downloadImage("webp");
+    });
   });
 });
-
-
