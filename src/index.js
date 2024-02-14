@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   import("@silvia-odwyer/photon").then((photon) => {
     const filterArray = [
       "no_filter",
+      "grayscale",
       "oceanic",
       "islands",
       "marine",
@@ -21,9 +22,41 @@ document.addEventListener("DOMContentLoaded", () => {
       "vintage",
       "perfume",
       "serenity",
-    ]; //, "cali", "dramatic", "duotone_horizon", "duotone_lilac", "duotone_ochre", "duotone_violette", "firenze", "golden", "lix", "lofi", "neue", "obsidian", "pastel_pink", "ryo"
+      "cali",
+      "dramatic",
+      "duotone_horizon",
+      "duotone_lilac",
+      "duotone_ochre",
+      "duotone_violette",
+      "firenze",
+      "golden",
+      "lix",
+      "lofi",
+      "neue",
+      "obsidian",
+      "pastel_pink",
+      "ryo",
+    ];
+
+    const RGBManipulationsArray = [
+      "inc_red_channel",
+      "inc_blue_channel",
+      "inc_green_channel",
+      "dec_red_channel",
+      "dec_blue_channel",
+      "dec_green_channel",
+      "swap_rg_channels",
+      "swap_rb_channels",
+      "swap_gb_channels",
+      "remove_red_channel",
+      "remove_green_channel",
+      "remove_blue_channel",
+    ];
 
     var filtersUl = document.getElementById("filters");
+    var channelManipulationsUl = document.getElementById(
+      "channelManipulations",
+    );
 
     filterArray.forEach((filter) => {
       const filterHtml = `<label for="filters-radio-${filter}"
@@ -42,6 +75,19 @@ document.addEventListener("DOMContentLoaded", () => {
     </label>`;
       filtersUl.innerHTML += filterHtml;
     });
+    RGBManipulationsArray.forEach((filter) => {
+      const filterHtml = `<label
+      class="inline-flex items-center gap-x-2.5 py-3 px-4 text-sm font-medium bg-white border text-indigo-800 -mt-px first:rounded-t-lg first:mt-0 last:rounded-b-lg sm:-ms-px sm:mt-0 sm:first:rounded-se-none sm:first:rounded-es-lg sm:last:rounded-es-none sm:last:rounded-se-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+      <div class="relative flex items-start w-full">
+        <div class="flex items-center h-5">
+          <a name="chm-a" id="${filter}" href="javascript:void(0);" x-disabled="!file">
+              ${filter.replace("_", " ")}
+            </a>
+        </div>
+      </div>
+    </label>`;
+      channelManipulationsUl.innerHTML += filterHtml;
+    });
 
     const canvasPreview = document.getElementById("canvasPreview");
     const canvasChanged = document.getElementById("canvasChanged");
@@ -50,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputImageQuality = document.getElementById("inputImageQuality");
     const btnClear = document.getElementById("btnClear");
     const filters_radio = document.getElementsByName("filters-radio");
+    const chm_a = document.getElementsByName("chm-a");
 
     function hasImage() {
       var ctxPreview = canvasPreview.getContext("2d");
@@ -88,7 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
 
-        handleCanvasChange(selectedValue);
+        handleCanvasChangeFilter(selectedValue);
+      });
+    });
+
+    chm_a.forEach(function (a) {
+      a.addEventListener("click", function (event) {
+        handleCanvasChange(event.target.id);
       });
     });
 
@@ -111,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
-    const handleCanvasChange = (filter) => {
+    const handleCanvasChangeFilter = (filter) => {
       if (hasImage()) {
         try {
           const ctxChanged = canvasChanged.getContext("2d");
@@ -135,36 +188,90 @@ document.addEventListener("DOMContentLoaded", () => {
             case "serenity":
               photon.filter(img, filter);
               break;
-            // case "cali":
-            //   photon.cali(img);
-            // case "dramatic":
-            //   photon.dramatic(img);
-            // case "duotone_horizon":
-            //   photon.duotone_horizon(img);
-            // case "duotone_lilac":
-            //   photon.duotone_lilac(img);
-            // case "duotone_ochre":
-            //   photon.duotone_ochre(img);
-            // case "duotone_violette":
-            //   photon.duotone_violette(img);
-            // case "firenze":
-            //   photon.firenze(img);
-            // case "golden":
-            //   photon.golden(img);
-            // case "lix":
-            //   photon.lix(img);
-            // case "lofi":
-            //   photon.lofi(img);
-            // case "neue":
-            //   photon.neue(img);
-            // case "obsidian":
-            //   photon.obsidian(img);
-            // case "pastel_pink":
-            //   photon.pastel_pink(img);
-            // case "ryo":
-            //   photon.ryo(img);
+            case "cali":
+              photon.cali(img);
+            case "dramatic":
+              photon.dramatic(img);
+            case "duotone_horizon":
+              photon.duotone_horizon(img);
+            case "duotone_lilac":
+              photon.duotone_lilac(img);
+            case "duotone_ochre":
+              photon.duotone_ochre(img);
+            case "duotone_violette":
+              photon.duotone_violette(img);
+            case "firenze":
+              photon.firenze(img);
+            case "golden":
+              photon.golden(img);
+            case "lix":
+              photon.lix(img);
+            case "lofi":
+              photon.lofi(img);
+            case "neue":
+              photon.neue(img);
+            case "obsidian":
+              photon.obsidian(img);
+            case "pastel_pink":
+              photon.pastel_pink(img);
+            case "ryo":
+              photon.ryo(img);
+            case "grayscale":
+              photon.grayscale(img);
+              break;
             case "no_filter":
             default:
+              break;
+          }
+          photon.putImageData(canvasChanged, ctxChanged, img);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+
+    const handleCanvasChange = (filter) => {
+      if (hasImage()) {
+        try {
+          const ctxChanged = canvasChanged.getContext("2d");
+          // copyfrompreviewtocanvas(canvasPreview, canvasChanged);
+          let img = photon.open_image(canvasChanged, ctxChanged);
+          switch (filter) {
+            case "inc_red_channel":
+              photon.alter_red_channel(img, 100);
+              break;
+            case "inc_blue_channel":
+              photon.alter_channel(img, 2, 100);
+              break;
+            case "inc_green_channel":
+              photon.alter_channel(img, 1, 100);
+              break;
+            case "dec_red_channel":
+              photon.alter_channel(img, 0, -50);
+              break;
+            case "dec_blue_channel":
+              photon.alter_channel(img, 2, -100);
+              break;
+            case "dec_green_channel":
+              photon.alter_channel(img, 1, -100);
+              break;
+            case "swap_rg_channels":
+              photon.swap_channels(img, 0, 1);
+              break;
+            case "swap_rb_channels":
+              photon.swap_channels(img, 0, 2);
+              break;
+            case "swap_gb_channels":
+              photon.swap_channels(img, 1, 2);
+              break;
+            case "remove_red_channel":
+              photon.remove_red_channel(img, 250);
+              break;
+            case "remove_green_channel":
+              photon.remove_green_channel(img, 250);
+              break;
+            case "remove_blue_channel":
+              photon.remove_blue_channel(img, 250);
               break;
           }
           photon.putImageData(canvasChanged, ctxChanged, img);
