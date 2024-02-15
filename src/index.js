@@ -2,6 +2,9 @@ import "./style.css";
 import "/node_modules/preline/dist/preline.js";
 import Compressor from "compressorjs";
 
+var historyStack = [];
+var historyIndex = -1;
+
 document.addEventListener("DOMContentLoaded", () => {
   import("@silvia-odwyer/photon").then((photon) => {
     const filterArray = [
@@ -95,6 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const imageInput = document.getElementById("imageInput");
     const inputImageQuality = document.getElementById("inputImageQuality");
     const btnClear = document.getElementById("btnClear");
+    const btnUndo = document.getElementById("btnUndo");
+    const btnRedo = document.getElementById("btnRedo");
     const filters_radio = document.getElementsByName("filters-radio");
     const chm_a = document.getElementsByName("chm-a");
 
@@ -159,7 +164,10 @@ document.addEventListener("DOMContentLoaded", () => {
           canvasPreview.height = imageHeight;
           ctxPreview.drawImage(imagePreview, 0, 0, imageWidth, imageHeight);
 
-          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
+          copycanvas(canvasPreview, canvasChanged);
+          historyStack.push(canvasChanged);
+          historyIndex++;
+          showHistory();
         };
       }
     };
@@ -167,9 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const handleCanvasChangeFilter = (filter) => {
       if (hasImage()) {
         try {
-          const ctxChanged = canvasChanged.getContext("2d");
-          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
-          let img = photon.open_image(canvasChanged, ctxChanged);
+          checkStackPostionBeforeChange();
+          const canvasPrev =
+            historyStack[historyIndex > 0 ? historyIndex - 1 : 0];
+          const ctxCanvasPrev = canvasPrev.getContext("2d");
+          let img = photon.open_image(canvasPrev, ctxCanvasPrev);
           switch (filter) {
             case "oceanic":
             case "islands":
@@ -223,7 +233,16 @@ document.addEventListener("DOMContentLoaded", () => {
             default:
               break;
           }
+          const ctxChanged = canvasChanged.getContext("2d");
           photon.putImageData(canvasChanged, ctxChanged, img);
+          if (historyIndex > 0) {
+            historyStack[historyIndex] = canvasChanged;
+          } else {
+            historyStack.push(canvasChanged);
+            historyIndex++;
+          }
+          console.log(historyStack);
+          showHistory();
         } catch (error) {
           console.log(error);
         }
@@ -233,9 +252,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const handleCanvasChange = (filter) => {
       if (hasImage()) {
         try {
-          const ctxChanged = canvasChanged.getContext("2d");
-          // copyfrompreviewtocanvas(canvasPreview, canvasChanged);
-          let img = photon.open_image(canvasChanged, ctxChanged);
+          checkStackPostionBeforeChange();
+          const canvasPrev = historyStack[historyIndex];
+          const ctxCanvasPrev = canvasPrev.getContext("2d");
+          let img = photon.open_image(canvasPrev, ctxCanvasPrev);
           switch (filter) {
             case "inc_red_channel":
               photon.alter_red_channel(img, 100);
@@ -274,14 +294,18 @@ document.addEventListener("DOMContentLoaded", () => {
               photon.remove_blue_channel(img, 250);
               break;
           }
+          const ctxChanged = canvasChanged.getContext("2d");
           photon.putImageData(canvasChanged, ctxChanged, img);
+          historyStack.push(canvasChanged);
+          historyIndex++;
         } catch (error) {
           console.log(error);
         }
       }
     };
 
-    function copyfrompreviewtocanvas(fromCanvas, toCanvas) {
+    // not working when copying from history while undoing or redoing . please find solution
+    function copycanvas(fromCanvas, toCanvas) {
       const ctxtoCanvas = toCanvas.getContext("2d");
       toCanvas.width = fromCanvas.width;
       toCanvas.height = fromCanvas.height;
@@ -299,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function downloadImage(format) {
-      copyfrompreviewtocanvas(canvasChanged, canvasDownload);
+      copycanvas(canvasChanged, canvasDownload);
       var quality = +inputImageQuality.value / 100;
       canvasDownload.toBlob((blob) => {
         new Compressor(blob, {
@@ -349,10 +373,48 @@ document.addEventListener("DOMContentLoaded", () => {
         ctxChanged.canvas.width,
         ctxChanged.canvas.height,
       );
+      historyStack = [];
+      historyIndex = -1;
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        copycanvas(historyStack[historyIndex], canvasChanged);
+      }
+    }
+
+    function redo() {
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        copycanvas(historyStack[historyIndex], canvasChanged);
+      }
+    }
+
+    function checkStackPostionBeforeChange() {
+      if (historyIndex >= 0 && historyIndex < historyStack.length - 1) {
+        historyStack.splice(
+          historyIndex + 1,
+          historyStack.length - historyIndex,
+        );
+      }
+    }
+
+    function showHistory() {
+      var history = document.getElementById("history");
+      history.style.display = "block";
+
+      historyStack.forEach((canvas) => {
+        var img = document.createElement("img");
+        img.src = canvas.toDataURL();
+        history.appendChild(img);
+      });
     }
 
     imageInput.addEventListener("change", handleImageChange);
     btnClear.addEventListener("click", clearFileUpload);
+    btnUndo.addEventListener("click", undo);
+    btnRedo.addEventListener("click", redo);
     document.getElementById("downloadPNG").addEventListener("click", () => {
       downloadImage("png");
     });
