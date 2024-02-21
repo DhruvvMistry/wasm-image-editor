@@ -4,6 +4,7 @@ import Compressor from "compressorjs";
 
 var historyStack = [];
 var historyIndex = -1;
+const max_history = 20;
 
 document.addEventListener("DOMContentLoaded", () => {
   import("@silvia-odwyer/photon").then((photon) => {
@@ -165,21 +166,47 @@ document.addEventListener("DOMContentLoaded", () => {
           ctxPreview.drawImage(imagePreview, 0, 0, imageWidth, imageHeight);
 
           copycanvas(canvasPreview, canvasChanged);
-          historyStack.push(canvasChanged);
-          historyIndex++;
+          pushCanvasToStack(canvasChanged);
           showHistory();
         };
       }
+    };
+
+    const pushCanvasToStack = (canvasInput) => {
+      const ctx = canvasInput.getContext("2d");
+      var data = ctx.getImageData(0, 0, canvasInput.width, canvasInput.height);
+      historyStack.push(data);
+      if (historyStack.length >= max_history) {
+        historyStack.shift();
+      } else {
+        historyIndex++;
+      }
+    };
+
+    const addCanvasToStackbyIndex = (canvasInput, i) => {
+      const ctx = canvasInput.getContext("2d");
+      const data = ctx.getImageData(
+        0,
+        0,
+        canvasInput.width,
+        canvasInput.height,
+      );
+      historyStack[i] = data;
+    };
+
+    const restoreCanvasbyIndex = (i) => {
+      const data = historyStack[i];
+      const ctx = canvasChanged.getContext("2d");
+      ctx.putImageData(data, 0, 0);
     };
 
     const handleCanvasChangeFilter = (filter) => {
       if (hasImage()) {
         try {
           checkStackPostionBeforeChange();
-          const canvasPrev =
-            historyStack[historyIndex > 0 ? historyIndex - 1 : 0];
-          const ctxCanvasPrev = canvasPrev.getContext("2d");
-          let img = photon.open_image(canvasPrev, ctxCanvasPrev);
+          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
+          const ctxChanged = canvasChanged.getContext("2d");
+          let img = photon.open_image(canvasChanged, ctxChanged);
           switch (filter) {
             case "oceanic":
             case "islands":
@@ -233,15 +260,12 @@ document.addEventListener("DOMContentLoaded", () => {
             default:
               break;
           }
-          const ctxChanged = canvasChanged.getContext("2d");
           photon.putImageData(canvasChanged, ctxChanged, img);
           if (historyIndex > 0) {
-            historyStack[historyIndex] = canvasChanged;
+            addCanvasToStackbyIndex(canvasChanged, historyIndex);
           } else {
-            historyStack.push(canvasChanged);
-            historyIndex++;
+            pushCanvasToStack(canvasChanged);
           }
-          console.log(historyStack);
           showHistory();
         } catch (error) {
           console.log(error);
@@ -253,9 +277,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (hasImage()) {
         try {
           checkStackPostionBeforeChange();
-          const canvasPrev = historyStack[historyIndex];
-          const ctxCanvasPrev = canvasPrev.getContext("2d");
-          let img = photon.open_image(canvasPrev, ctxCanvasPrev);
+          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
+          const ctxChanged = canvasChanged.getContext("2d");
+          let img = photon.open_image(canvasChanged, ctxChanged);
           switch (filter) {
             case "inc_red_channel":
               photon.alter_red_channel(img, 100);
@@ -294,17 +318,15 @@ document.addEventListener("DOMContentLoaded", () => {
               photon.remove_blue_channel(img, 250);
               break;
           }
-          const ctxChanged = canvasChanged.getContext("2d");
           photon.putImageData(canvasChanged, ctxChanged, img);
-          historyStack.push(canvasChanged);
-          historyIndex++;
+          pushCanvasToStack(canvasChanged);
+          showHistory();
         } catch (error) {
           console.log(error);
         }
       }
     };
 
-    // not working when copying from history while undoing or redoing . please find solution
     function copycanvas(fromCanvas, toCanvas) {
       const ctxtoCanvas = toCanvas.getContext("2d");
       toCanvas.width = fromCanvas.width;
@@ -380,14 +402,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function undo() {
       if (historyIndex > 0) {
         historyIndex--;
-        copycanvas(historyStack[historyIndex], canvasChanged);
+        restoreCanvasbyIndex(historyIndex);
       }
     }
 
     function redo() {
       if (historyIndex < historyStack.length - 1) {
         historyIndex++;
-        copycanvas(historyStack[historyIndex], canvasChanged);
+        restoreCanvasbyIndex(historyIndex);
       }
     }
 
@@ -403,10 +425,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function showHistory() {
       var history = document.getElementById("history");
       history.style.display = "block";
-
-      historyStack.forEach((canvas) => {
+      historyStack.forEach((imageData) => {
         var img = document.createElement("img");
-        img.src = canvas.toDataURL();
+        img.src = URL.createObjectURL(
+          new Blob([imageData], { type: "image/jpeg" }),
+        );
         history.appendChild(img);
       });
     }
