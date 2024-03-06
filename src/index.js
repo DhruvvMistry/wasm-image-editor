@@ -2,6 +2,10 @@ import "./style.css";
 import "/node_modules/preline/dist/preline.js";
 import Compressor from "compressorjs";
 
+var historyStack = [];
+var historyIndex = -1;
+const max_history = 20;
+
 document.addEventListener("DOMContentLoaded", () => {
   import("@silvia-odwyer/photon").then((photon) => {
     const filterArray = [
@@ -95,6 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const imageInput = document.getElementById("imageInput");
     const inputImageQuality = document.getElementById("inputImageQuality");
     const btnClear = document.getElementById("btnClear");
+    const btnUndo = document.getElementById("btnUndo");
+    const btnRedo = document.getElementById("btnRedo");
     const filters_radio = document.getElementsByName("filters-radio");
     const chm_a = document.getElementsByName("chm-a");
 
@@ -159,16 +165,47 @@ document.addEventListener("DOMContentLoaded", () => {
           canvasPreview.height = imageHeight;
           ctxPreview.drawImage(imagePreview, 0, 0, imageWidth, imageHeight);
 
-          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
+          copycanvas(canvasPreview, canvasChanged);
+          pushCanvasToStack(canvasChanged);
+          showHistory();
         };
       }
+    };
+
+    const pushCanvasToStack = (canvasInput) => {
+      const ctx = canvasInput.getContext("2d");
+      var data = ctx.getImageData(0, 0, canvasInput.width, canvasInput.height);
+      historyStack.push(data);
+      if (historyStack.length >= max_history) {
+        historyStack.shift();
+      } else {
+        historyIndex++;
+      }
+    };
+
+    const addCanvasToStackbyIndex = (canvasInput, i) => {
+      const ctx = canvasInput.getContext("2d");
+      const data = ctx.getImageData(
+        0,
+        0,
+        canvasInput.width,
+        canvasInput.height,
+      );
+      historyStack[i] = data;
+    };
+
+    const restoreCanvasbyIndex = (i) => {
+      const data = historyStack[i];
+      const ctx = canvasChanged.getContext("2d");
+      ctx.putImageData(data, 0, 0);
     };
 
     const handleCanvasChangeFilter = (filter) => {
       if (hasImage()) {
         try {
+          checkStackPostionBeforeChange();
+          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
           const ctxChanged = canvasChanged.getContext("2d");
-          copyfrompreviewtocanvas(canvasPreview, canvasChanged);
           let img = photon.open_image(canvasChanged, ctxChanged);
           switch (filter) {
             case "oceanic":
@@ -224,6 +261,12 @@ document.addEventListener("DOMContentLoaded", () => {
               break;
           }
           photon.putImageData(canvasChanged, ctxChanged, img);
+          if (historyIndex > 0) {
+            addCanvasToStackbyIndex(canvasChanged, historyIndex);
+          } else {
+            pushCanvasToStack(canvasChanged);
+          }
+          showHistory();
         } catch (error) {
           console.log(error);
         }
@@ -233,8 +276,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const handleCanvasChange = (filter) => {
       if (hasImage()) {
         try {
+          checkStackPostionBeforeChange();
+          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
           const ctxChanged = canvasChanged.getContext("2d");
-          // copyfrompreviewtocanvas(canvasPreview, canvasChanged);
           let img = photon.open_image(canvasChanged, ctxChanged);
           switch (filter) {
             case "inc_red_channel":
@@ -275,13 +319,15 @@ document.addEventListener("DOMContentLoaded", () => {
               break;
           }
           photon.putImageData(canvasChanged, ctxChanged, img);
+          pushCanvasToStack(canvasChanged);
+          showHistory();
         } catch (error) {
           console.log(error);
         }
       }
     };
 
-    function copyfrompreviewtocanvas(fromCanvas, toCanvas) {
+    function copycanvas(fromCanvas, toCanvas) {
       const ctxtoCanvas = toCanvas.getContext("2d");
       toCanvas.width = fromCanvas.width;
       toCanvas.height = fromCanvas.height;
@@ -299,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function downloadImage(format) {
-      copyfrompreviewtocanvas(canvasChanged, canvasDownload);
+      copycanvas(canvasChanged, canvasDownload);
       var quality = +inputImageQuality.value / 100;
       canvasDownload.toBlob((blob) => {
         new Compressor(blob, {
@@ -349,10 +395,49 @@ document.addEventListener("DOMContentLoaded", () => {
         ctxChanged.canvas.width,
         ctxChanged.canvas.height,
       );
+      historyStack = [];
+      historyIndex = -1;
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        restoreCanvasbyIndex(historyIndex);
+      }
+    }
+
+    function redo() {
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        restoreCanvasbyIndex(historyIndex);
+      }
+    }
+
+    function checkStackPostionBeforeChange() {
+      if (historyIndex >= 0 && historyIndex < historyStack.length - 1) {
+        historyStack.splice(
+          historyIndex + 1,
+          historyStack.length - historyIndex,
+        );
+      }
+    }
+
+    function showHistory() {
+      var history = document.getElementById("history");
+      history.style.display = "block";
+      historyStack.forEach((imageData) => {
+        var img = document.createElement("img");
+        img.src = URL.createObjectURL(
+          new Blob([imageData], { type: "image/jpeg" }),
+        );
+        history.appendChild(img);
+      });
     }
 
     imageInput.addEventListener("change", handleImageChange);
     btnClear.addEventListener("click", clearFileUpload);
+    btnUndo.addEventListener("click", undo);
+    btnRedo.addEventListener("click", redo);
     document.getElementById("downloadPNG").addEventListener("click", () => {
       downloadImage("png");
     });
