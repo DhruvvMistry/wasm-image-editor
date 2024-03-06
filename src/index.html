@@ -162,15 +162,16 @@
                       file:disabled:opacity-50 file:disabled:pointer-events-none
                       dark:file:bg-indigo-500
                       dark:hover:file:bg-indigo-400
+                      cursor-pointer
                     " x-model="file">
                     <button type="button" x-show="file" id="btnClear" @click="file=''"
-                      class="py-2 px-2.5 mr-[-35px] absolute top-0 right-0 inline-flex items-center gap-x-2 text-sm font-semibold rounded-md border border-transparent bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600">
+                      class="py-2 px-2.5 mr-[-35px] absolute top-0 right-0 inline-flex items-center gap-x-2 text-sm font-semibold rounded-md border border-transparent bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600 ">
                       X
                     </button>
                   </label>
                 </div>
-                <img id="btnUndo" srcset="https://img.icons8.com/?size=24&amp;id=86030&amp;format=png 1x, https://img.icons8.com/?size=48&amp;id=86030&amp;format=png 2x," src="https://img.icons8.com/?size=48&amp;id=86030&amp;format=png" alt="Undo" loading="lazy" width="24" height="24" style="width: 24px; height: 24px;" lazy="loaded">
-                <img id="btnRedo" srcset="https://img.icons8.com/?size=24&amp;id=98306&amp;format=png 1x, https://img.icons8.com/?size=48&amp;id=98306&amp;format=png 2x," src="https://img.icons8.com/?size=48&amp;id=98306&amp;format=png" alt="Redo" loading="lazy" width="24" height="24" style="width: 24px; height: 24px;" lazy="loaded">
+                <img id="btnUndo" srcset="https://img.icons8.com/?size=24&amp;id=86030&amp;format=png 1x, https://img.icons8.com/?size=48&amp;id=86030&amp;format=png 2x," src="https://img.icons8.com/?size=48&amp;id=86030&amp;format=png" alt="Undo" loading="lazy" width="24" height="24" style="width: 24px; height: 24px;" lazy="loaded" class="cursor-pointer">
+                <img id="btnRedo" srcset="https://img.icons8.com/?size=24&amp;id=98306&amp;format=png 1x, https://img.icons8.com/?size=48&amp;id=98306&amp;format=png 2x," src="https://img.icons8.com/?size=48&amp;id=98306&amp;format=png" alt="Redo" loading="lazy" class="cursor-pointer" width="24" height="24" style="width: 24px; height: 24px;" lazy="loaded">
                 <div class="flex flex-col sm:flex-row justify-end">
                   <div class="flex flex-col sm:flex-row justify-start me-3">
                     <div class="relative inline-block mt-2">

@@ -5,6 +5,7 @@ import Compressor from "compressorjs";
 var historyStack = [];
 var historyIndex = -1;
 const max_history = 20;
+var isLastFilter = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   import("@silvia-odwyer/photon").then((photon) => {
@@ -25,22 +26,23 @@ document.addEventListener("DOMContentLoaded", () => {
       "bluechrome",
       "vintage",
       "perfume",
-      "serenity",
-      "cali",
-      "dramatic",
-      "duotone_horizon",
-      "duotone_lilac",
-      "duotone_ochre",
-      "duotone_violette",
-      "firenze",
-      "golden",
-      "lix",
-      "lofi",
-      "neue",
-      "obsidian",
-      "pastel_pink",
-      "ryo",
-    ];
+      "serenity"];
+    //   ,
+    //   "cali",
+    //   "dramatic",
+    //   "duotone_horizon",
+    //   "duotone_lilac",
+    //   "duotone_ochre",
+    //   "duotone_violette",
+    //   "firenze",
+    //   "golden",
+    //   "lix",
+    //   "lofi",
+    //   "neue",
+    //   "obsidian",
+    //   "pastel_pink",
+    //   "ryo",
+    // ];
 
     const RGBManipulationsArray = [
       "inc_red_channel",
@@ -167,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           copycanvas(canvasPreview, canvasChanged);
           pushCanvasToStack(canvasChanged);
-          showHistory();
+          // showHistory();
         };
       }
     };
@@ -201,129 +203,135 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const handleCanvasChangeFilter = (filter) => {
-      if (hasImage()) {
-        try {
-          checkStackPostionBeforeChange();
-          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
-          const ctxChanged = canvasChanged.getContext("2d");
-          let img = photon.open_image(canvasChanged, ctxChanged);
-          switch (filter) {
-            case "oceanic":
-            case "islands":
-            case "marine":
-            case "seagreen":
-            case "flagblue":
-            case "liquid":
-            case "diamante":
-            case "radio":
-            case "twenties":
-            case "rosetint":
-            case "mauve":
-            case "bluechrome":
-            case "vintage":
-            case "perfume":
-            case "serenity":
-              photon.filter(img, filter);
-              break;
-            case "cali":
-              photon.cali(img);
-            case "dramatic":
-              photon.dramatic(img);
-            case "duotone_horizon":
-              photon.duotone_horizon(img);
-            case "duotone_lilac":
-              photon.duotone_lilac(img);
-            case "duotone_ochre":
-              photon.duotone_ochre(img);
-            case "duotone_violette":
-              photon.duotone_violette(img);
-            case "firenze":
-              photon.firenze(img);
-            case "golden":
-              photon.golden(img);
-            case "lix":
-              photon.lix(img);
-            case "lofi":
-              photon.lofi(img);
-            case "neue":
-              photon.neue(img);
-            case "obsidian":
-              photon.obsidian(img);
-            case "pastel_pink":
-              photon.pastel_pink(img);
-            case "ryo":
-              photon.ryo(img);
-            case "grayscale":
-              photon.grayscale(img);
-              break;
-            case "no_filter":
-            default:
-              break;
-          }
-          photon.putImageData(canvasChanged, ctxChanged, img);
-          if (historyIndex > 0) {
-            addCanvasToStackbyIndex(canvasChanged, historyIndex);
-          } else {
-            pushCanvasToStack(canvasChanged);
-          }
-          showHistory();
-        } catch (error) {
-          console.log(error);
+      if (!hasImage()) {
+        return false;
+      }
+
+      try {
+        checkStackPostionBeforeChange();
+        restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
+        const ctxChanged = canvasChanged.getContext("2d");
+        let img = photon.open_image(canvasChanged, ctxChanged);
+        switch (filter) {
+          case "oceanic":
+          case "islands":
+          case "marine":
+          case "seagreen":
+          case "flagblue":
+          case "liquid":
+          case "diamante":
+          case "radio":
+          case "twenties":
+          case "rosetint":
+          case "mauve":
+          case "bluechrome":
+          case "vintage":
+          case "perfume":
+          case "serenity":
+            photon.filter(img, filter);
+            break;
+          // case "cali":
+          //   photon.cali(img);
+          // case "dramatic":
+          //   photon.dramatic(img);
+          // case "duotone_horizon":
+          //   photon.duotone_horizon(img);
+          // case "duotone_lilac":
+          //   photon.duotone_lilac(img);
+          // case "duotone_ochre":
+          //   photon.duotone_ochre(img);
+          // case "duotone_violette":
+          //   photon.duotone_violette(img);
+          // case "firenze":
+          //   photon.firenze(img);
+          // case "golden":
+          //   photon.golden(img);
+          // case "lix":
+          //   photon.lix(img);
+          // case "lofi":
+          //   photon.lofi(img);
+          // case "neue":
+          //   photon.neue(img);
+          // case "obsidian":
+          //   photon.obsidian(img);
+          // case "pastel_pink":
+          //   photon.pastel_pink(img);
+          // case "ryo":
+          //   photon.ryo(img);
+          case "grayscale":
+            photon.grayscale(img);
+            break;
+          case "no_filter":
+          default:
+            break;
         }
+        photon.putImageData(canvasChanged, ctxChanged, img);
+        if (isLastFilter) {
+          addCanvasToStackbyIndex(canvasChanged, historyIndex);
+        } else {
+          pushCanvasToStack(canvasChanged);
+        }
+        isLastFilter = true;
+        // showHistory();
+      } catch (error) {
+        console.log(error);
       }
     };
 
     const handleCanvasChange = (filter) => {
-      if (hasImage()) {
-        try {
-          checkStackPostionBeforeChange();
-          restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
-          const ctxChanged = canvasChanged.getContext("2d");
-          let img = photon.open_image(canvasChanged, ctxChanged);
-          switch (filter) {
-            case "inc_red_channel":
-              photon.alter_red_channel(img, 100);
-              break;
-            case "inc_blue_channel":
-              photon.alter_channel(img, 2, 100);
-              break;
-            case "inc_green_channel":
-              photon.alter_channel(img, 1, 100);
-              break;
-            case "dec_red_channel":
-              photon.alter_channel(img, 0, -50);
-              break;
-            case "dec_blue_channel":
-              photon.alter_channel(img, 2, -100);
-              break;
-            case "dec_green_channel":
-              photon.alter_channel(img, 1, -100);
-              break;
-            case "swap_rg_channels":
-              photon.swap_channels(img, 0, 1);
-              break;
-            case "swap_rb_channels":
-              photon.swap_channels(img, 0, 2);
-              break;
-            case "swap_gb_channels":
-              photon.swap_channels(img, 1, 2);
-              break;
-            case "remove_red_channel":
-              photon.remove_red_channel(img, 250);
-              break;
-            case "remove_green_channel":
-              photon.remove_green_channel(img, 250);
-              break;
-            case "remove_blue_channel":
-              photon.remove_blue_channel(img, 250);
-              break;
-          }
-          photon.putImageData(canvasChanged, ctxChanged, img);
-          pushCanvasToStack(canvasChanged);
-          showHistory();
-        } catch (error) {
-          console.log(error);
+      if (!hasImage()) {
+        return false;
+      }
+
+      try {
+        checkStackPostionBeforeChange();
+        restoreCanvasbyIndex(historyIndex > 0 ? historyIndex - 1 : 0);
+        const ctxChanged = canvasChanged.getContext("2d");
+        let img = photon.open_image(canvasChanged, ctxChanged);
+        switch (filter) {
+          case "inc_red_channel":
+            photon.alter_red_channel(img, 100);
+            break;
+          case "inc_blue_channel":
+            photon.alter_channel(img, 2, 100);
+            break;
+          case "inc_green_channel":
+            photon.alter_channel(img, 1, 100);
+            break;
+          case "dec_red_channel":
+            photon.alter_channel(img, 0, -50);
+            break;
+          case "dec_blue_channel":
+            photon.alter_channel(img, 2, -100);
+            break;
+          case "dec_green_channel":
+            photon.alter_channel(img, 1, -100);
+            break;
+          case "swap_rg_channels":
+            photon.swap_channels(img, 0, 1);
+            break;
+          case "swap_rb_channels":
+            photon.swap_channels(img, 0, 2);
+            break;
+          case "swap_gb_channels":
+            photon.swap_channels(img, 1, 2);
+            break;
+          case "remove_red_channel":
+            photon.remove_red_channel(img, 250);
+            break;
+          case "remove_green_channel":
+            photon.remove_green_channel(img, 250);
+            break;
+          case "remove_blue_channel":
+            photon.remove_blue_channel(img, 250);
+            break;
         }
+        photon.putImageData(canvasChanged, ctxChanged, img);
+        pushCanvasToStack(canvasChanged);
+        isLastFilter = false;
+        // showHistory();
+      } catch (error) {
+        console.log(error);
       }
     };
 
@@ -403,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (historyIndex > 0) {
         historyIndex--;
         restoreCanvasbyIndex(historyIndex);
+        isLastFilter=false;
       }
     }
 
@@ -410,6 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (historyIndex < historyStack.length - 1) {
         historyIndex++;
         restoreCanvasbyIndex(historyIndex);
+        isLastFilter=false;
       }
     }
 
@@ -422,17 +432,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    function showHistory() {
-      var history = document.getElementById("history");
-      history.style.display = "block";
-      historyStack.forEach((imageData) => {
-        var img = document.createElement("img");
-        img.src = URL.createObjectURL(
-          new Blob([imageData], { type: "image/jpeg" }),
-        );
-        history.appendChild(img);
-      });
-    }
+    // function showHistory() {
+    //   var history = document.getElementById("history");
+    //   history.style.display = "block";
+    //   historyStack.forEach((imageData) => {
+    //     var img = document.createElement("img");
+    //     img.src = URL.createObjectURL(
+    //       new Blob([imageData], { type: "image/jpeg" }),
+    //     );
+    //     history.appendChild(img);
+    //   });
+    // }
 
     imageInput.addEventListener("change", handleImageChange);
     btnClear.addEventListener("click", clearFileUpload);
